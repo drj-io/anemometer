@@ -1,0 +1,72 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+
+
+<script>
+  var socket = io();
+
+
+</script>
+<center><img src="/images/logo.png" width="30"></center>
+<br/><br/>
+<center>
+  <div>Wind Speed</div>
+</center>
+<h1 class="speed" style="text-align: center">
+
+    </h1>
+
+
+<script>
+  $(function() {
+    var socket = io();
+    socket.on('wind', function(msg) {
+      $('.speed').html(msg + "MPH")
+      console.log(myLineChart.data);
+
+      myLineChart.data.labels.push("");
+      myLineChart.data.datasets.forEach((dataset) => {
+        dataset.data.push(msg);
+      });
+      myLineChart.update();
+    });
+  });
+</script>
+
+
+<canvas id="myChart" width="400" height="100"></canvas>
+<script>
+
+  var ctx = document.getElementById("myChart").getContext('2d');
+  var myLineChart
+
+  $.ajax({
+      url: "/data/",
+      context: document.body
+    }).done(function(data) {
+      myLineChart = new Chart(ctx, {
+        type: 'line',
+        data: JSON.parse(data),
+        scaleShowVerticalLines: false,
+        options: {
+          scaleShowVerticalLines: false,
+          elements: {
+            point: {
+              radius: 0
+            }
+          },
+          scales: {
+      xAxes: [{
+        gridLines: {
+          drawOnChartArea: false
+        }
+      }]
+    }
+        }
+      });;
+    });
+
+
+
+</script>
