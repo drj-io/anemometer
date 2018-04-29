@@ -84,6 +84,7 @@ function r(){
   var reading  = 0;
   if(!adc.busy)
   {
+
     adc.readADCSingleEnded(channel, progGainAmp, samplesPerSecond, function(err, data) {
       if(err)
       {
@@ -93,14 +94,14 @@ function r(){
       // if you made it here, then the data object contains your reading!
 
 
-      var mph = ((data  - 400) / 1600) * 72.4764
+      var mph = ((data  - 405) / 1600) * 72.4764
       //var mph = ((data - 400) / 72.4764) * 72.4764;
       if (mph < 0){
         console.log("MPH DIPPED BELOW 0 ", mph)
         mph = 0;
       }
-      var rounded = (Math.round(mph * 4) / 4).toFixed(2);
-      console.log(data,rounded + "MPH");
+      var rounded = mph.toFixed(2) //(Math.round(mph * 4) / 4).toFixed(2);
+
       var v = (rounded * 100).toString();
 
       if (v.length == 3) v = "0"+v
@@ -108,25 +109,58 @@ function r(){
       if (v.length == 1) v = "000"+v
 
       //console.log(v);
+      adc.readADCSingleEnded(channel + 1, progGainAmp, samplesPerSecond, function(err,data){
+        if(err)
+        {
+          //logging / troubleshooting code goes here...
+          throw err;
+        }
 
-      io.emit('wind', rounded);
-      exec('python lcd.py ' + v, function(error, stdout, stderr) {
-        //console.log(err,stdout,stderr)
-      })
 
-      var CURRENT_TIMESTAMP =  moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
-      //console.log("TIMETSTAMP:",CURRENT_TIMESTAMP)
-      var sql = `
-        INSERT INTO wind SET ?
-      `
-      var set = {
-        datetime : CURRENT_TIMESTAMP,
-        windspeed : rounded
-      }
-      connection.query(sql, set, function (error, results, fields) {
-        if (error) throw error;
+              var dir = data - 400;
+              // total distance is 1600.
+              // 0 - north
+              // 200 - north east
+              // 400 - east
+              // 600 - south east
+              // 800 - south
+              // 1000 - south west
+              // 1200 - west
+              // 1400 - north west
+              // 1600 - north
+              //
+              var d = ""
+              if(dir < 100 && dir >= 0) d = "N"
+              else if (dir>=100 && dir <300) d = "NE"
+              else if (dir>=300 && dir <500) d = "E"
+              else if (dir>=500 && dir <700) d = "SE"
+              else if (dir>=700 && dir <900) d = "S"
+              else if (dir>=900 && dir <1100) d = "SW"
+              else if (dir>=1100 && dir <1300) d = "W"
+              else if (dir>=1300 && dir <1500) d = "NW"
+              else if (dir>=1500 && dir <=1600) d = "N"
 
-      });
+              console.log(data,rounded + "MPH", dir, d);
+              io.emit('wind', {speed: rounded, direction: d});
+              exec('python lcd.py ' + v, function(error, stdout, stderr) {
+                //console.log(err,stdout,stderr)
+              })
+
+              var CURRENT_TIMESTAMP =  moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
+              //console.log("TIMETSTAMP:",CURRENT_TIMESTAMP)
+              var sql = `
+                INSERT INTO wind SET ?
+              `
+              var set = {
+                datetime : CURRENT_TIMESTAMP,
+                windspeed : rounded
+              }
+              connection.query(sql, set, function (error, results, fields) {
+                if (error) throw error;
+
+              });
+        })
+
       // any other data processing code goes here...
     });
   }

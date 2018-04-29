@@ -13,7 +13,7 @@
 <center>
   <div>Wind Speed</div>
 </center>
-<h1 class="speed" style="text-align: center">
+<h1 class="speed" style="text-align: center; font-size: 62px; font-family:monospace">
 
     </h1>
 
@@ -22,12 +22,12 @@
   $(function() {
     var socket = io();
     socket.on('wind', function(msg) {
-      $('.speed').html(msg + "MPH")
+      $('.speed').html("Speed: " + msg.speed + "MPH <br/> Direction: " + msg.direction)
       console.log(myLineChart.data);
 
       myLineChart.data.labels.push("");
       myLineChart.data.datasets.forEach((dataset) => {
-        dataset.data.push(msg);
+        dataset.data.push(msg.speed);
       });
       myLineChart.update();
     });
